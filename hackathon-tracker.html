@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Хакатон: Трекер Вопросов</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #0f0f0f;
+            --bg-secondary: #1a1a1a;
+            --bg-card: #232323;
+            --text-primary: #e8e8e8;
+            --text-secondary: #a0a0a0;
+            --accent: #6366f1;
+            --accent-hover: #4f46e5;
+            --border: #333;
+            --success: #10b981;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Inter', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            padding: 2rem 1rem;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 3rem;
+            padding-bottom: 2rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(135deg, var(--accent) 0%, #8b5cf6 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            color: var(--text-secondary);
+            font-size: 1rem;
+            font-weight: 400;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: var(--bg-secondary);
+            border-radius: 10px;
+            overflow: hidden;
+            margin-top: 1.5rem;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent) 0%, #8b5cf6 100%);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .stats {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            margin-top: 1rem;
+            font-size: 0.9rem;
+        }
+
+        .stat {
+            color: var(--text-secondary);
+        }
+
+        .stat strong {
+            color: var(--accent);
+            font-weight: 600;
+        }
+
+        .task-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .task-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+
+        .task-card:hover {
+            border-color: var(--accent);
+            transform: translateX(4px);
+        }
+
+        .task-card.completed {
+            opacity: 0.6;
+            border-color: var(--success);
+        }
+
+        .task-header {
+            display: flex;
+            align-items: flex-start;
+            gap: 1rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .checkbox {
+            width: 24px;
+            height: 24px;
+            border: 2px solid var(--border);
+            border-radius: 6px;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            cursor: pointer;
+            margin-top: 2px;
+        }
+
+        .task-card:hover .checkbox {
+            border-color: var(--accent);
+        }
+
+        .task-card.completed .checkbox {
+            background: var(--success);
+            border-color: var(--success);
+        }
+
+        .checkbox::after {
+            content: '✓';
+            color: white;
+            font-size: 14px;
+            font-weight: bold;
+            display: none;
+        }
+
+        .task-card.completed .checkbox::after {
+            display: block;
+        }
+
+        .task-content {
+            flex: 1;
+        }
+
+        .task-number {
+            color: var(--accent);
+            font-weight: 600;
+            font-size: 0.85rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .task-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: var(--text-primary);
+        }
+
+        .task-card.completed .task-title {
+            text-decoration: line-through;
+        }
+
+        .task-questions {
+            list-style: none;
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+        }
+
+        .task-questions li {
+            padding-left: 1.2rem;
+            position: relative;
+            margin-bottom: 0.25rem;
+        }
+
+        .task-questions li::before {
+            content: '•';
+            position: absolute;
+            left: 0;
+            color: var(--accent);
+        }
+
+        .answer-section {
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border);
+        }
+
+        .answer-label {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.5rem;
+            display: block;
+        }
+
+        .answer-input {
+            width: 100%;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 0.75rem;
+            color: var(--text-primary);
+            font-family: inherit;
+            font-size: 0.95rem;
+            resize: vertical;
+            min-height: 80px;
+            transition: border-color 0.2s ease;
+        }
+
+        .answer-input:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        .answer-input::placeholder {
+            color: var(--text-secondary);
+            opacity: 0.5;
+        }
+
+        .export-btn {
+            background: linear-gradient(135deg, var(--accent) 0%, #8b5cf6 100%);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 0.95rem;
+            margin-top: 1rem;
+        }
+
+        .export-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(99, 102, 241, 0.3);
+        }
+
+        .export-btn:active {
+            transform: translateY(0);
+        }
+
+        footer {
+            margin-top: 4rem;
+            text-align: center;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            padding-top: 2rem;
+            border-top: 1px solid var(--border);
+        }
+
+        @media (max-width: 640px) {
+            h1 {
+                font-size: 2rem;
+            }
+
+            .task-card {
+                padding: 1rem;
+            }
+
+            .stats {
+                gap: 1rem;
+                font-size: 0.85rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Внешний Хакатон</h1>
+            <p class="subtitle">Вопросник для проектирования продаваемого артефакта</p>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+            <div class="stats">
+                <div class="stat">Всего задач: <strong id="totalTasks">22</strong></div>
+                <div class="stat">Выполнено: <strong id="completedTasks">0</strong></div>
+                <div class="stat">Прогресс: <strong id="progressPercent">0%</strong></div>
+            </div>
+            <button class="export-btn" onclick="exportToDocument()">📄 Экспортировать документ</button>
+        </header>
+
+        <div class="task-list" id="taskList">
+            <!-- Tasks will be inserted here by JavaScript -->
+        </div>
+
+        <footer>
+            <p>Трекер вопросов для проектирования хакатона как продукта</p>
+        </footer>
+    </div>
+
+    <script>
+        const tasks = [
+            {
+                title: "Цель хакатона",
+                questions: [
+                    "Какую основную задачу он решает (образовательную, R&D, комьюнити, продуктовую)",
+                    "Какой бизнес-результат мы хотим уметь продавать компаниям"
+                ]
+            },
+            {
+                title: "Целевая аудитория",
+                questions: [
+                    "Кто участники (уровень, роли, опыт)",
+                    "Какие сообщества подходят под этот формат",
+                    "Кого мы НЕ хотим видеть участниками"
+                ]
+            },
+            {
+                title: "Ценность для участника",
+                questions: [
+                    "Зачем человеку тратить время",
+                    "Что он уносит с собой (навыки, кейс, продукт, нетворк, статус)"
+                ]
+            },
+            {
+                title: "Ценность для организатора / заказчика",
+                questions: [
+                    "Какие измеримые эффекты даёт хакатон",
+                    "Что можно показать как результат (цифры, кейсы, прототипы)"
+                ]
+            },
+            {
+                title: "Тематика и фокус задач",
+                questions: [
+                    "Про что именно хакатон",
+                    "Насколько задачи универсальны и масштабируемы",
+                    "Можно ли менять тематику без изменения методологии"
+                ]
+            },
+            {
+                title: "Формат участия",
+                questions: [
+                    "Индивидуально или командами",
+                    "Размер команд",
+                    "Как формируются команды (самоорганизация / кураторство)"
+                ]
+            },
+            {
+                title: "Длительность и тайминг",
+                questions: [
+                    "Общая продолжительность",
+                    "Синхронный или асинхронный формат",
+                    "Ключевые контрольные точки"
+                ]
+            },
+            {
+                title: "Структура хакатона",
+                questions: [
+                    "Этапы (старт, работа, чекпоинты, финал)",
+                    "Что происходит на каждом этапе",
+                    "Какие действия обязательны для участников"
+                ]
+            },
+            {
+                title: "Типы задач",
+                questions: [
+                    "Открытые vs заданные",
+                    "Бизнес-ориентированные vs технические",
+                    "Шаблон формулировки задач"
+                ]
+            },
+            {
+                title: "Ограничения и правила",
+                questions: [
+                    "Что разрешено и запрещено",
+                    "Использование AI / сторонних сервисов",
+                    "Требования к результату"
+                ]
+            },
+            {
+                title: "Артефакты на выходе",
+                questions: [
+                    "Что именно должен сдать участник / команда",
+                    "Какие форматы принимаются",
+                    "Что можно повторно использовать в кейсах"
+                ]
+            },
+            {
+                title: "Критерии оценки",
+                questions: [
+                    "По каким параметрам оцениваются работы",
+                    "Кто оценивает",
+                    "Как обеспечивается прозрачность"
+                ]
+            },
+            {
+                title: "Менторство и поддержка",
+                questions: [
+                    "Есть ли менторы",
+                    "В каком формате они работают",
+                    "Минимально достаточный уровень поддержки"
+                ]
+            },
+            {
+                title: "Коммуникации",
+                questions: [
+                    "Где проходит основное общение",
+                    "Как доносится информация",
+                    "Как управляется шум и хаос"
+                ]
+            },
+            {
+                title: "Онбординг участников",
+                questions: [
+                    "Какие материалы получают на старте",
+                    "Что участник должен понять за первые 30 минут",
+                    "Как снизить порог входа"
+                ]
+            },
+            {
+                title: "Мотивация и вознаграждение",
+                questions: [
+                    "Материальная и нематериальная мотивация",
+                    "Зачем участвовать, если нет призов",
+                    "Что масштабируемо для корпораций"
+                ]
+            },
+            {
+                title: "Финал и подведение итогов",
+                questions: [
+                    "Формат демо",
+                    "Кто присутствует",
+                    "Как фиксируются результаты"
+                ]
+            },
+            {
+                title: "Пост-хакатон",
+                questions: [
+                    "Что происходит с лучшими решениями",
+                    "Есть ли продолжение",
+                    "Как удерживается сообщество"
+                ]
+            },
+            {
+                title: "Сбор и упаковка кейсов",
+                questions: [
+                    "Какие данные и материалы собираем",
+                    "Как оформляем кейсы",
+                    "Что пойдёт в маркетинг"
+                ]
+            },
+            {
+                title: "Повторяемость формата",
+                questions: [
+                    "Что должно быть стандартизировано",
+                    "Какие элементы легко кастомизируются",
+                    "Что станет 'ядром продукта'"
+                ]
+            },
+            {
+                title: "Артефакты хакатона",
+                questions: [
+                    "Какие документы и шаблоны нужно создать",
+                    "Что войдёт в 'коробку хакатона'",
+                    "Что можно продавать как методологию"
+                ]
+            },
+            {
+                title: "Связь с будущими продуктами",
+                questions: [
+                    "Как хакатон ведёт к обучению / консалтингу / внедрению",
+                    "Какие апселлы возможны",
+                    "Где точка монетизации"
+                ]
+            }
+        ];
+
+        // Load saved state from localStorage
+        let completedTasksSet = new Set(JSON.parse(localStorage.getItem('completedTasks') || '[]'));
+        let answersData = JSON.parse(localStorage.getItem('taskAnswers') || '{}');
+
+        function renderTasks() {
+            const taskListElement = document.getElementById('taskList');
+            taskListElement.innerHTML = '';
+
+            tasks.forEach((task, index) => {
+                const taskNumber = index + 1;
+                const isCompleted = completedTasksSet.has(taskNumber);
+
+                const taskCard = document.createElement('div');
+                taskCard.className = `task-card ${isCompleted ? 'completed' : ''}`;
+                taskCard.onclick = () => toggleTask(taskNumber);
+
+                const questionsHTML = task.questions
+                    .map(q => `<li>${q}</li>`)
+                    .join('');
+
+                const savedAnswer = answersData[taskNumber] || '';
+
+                taskCard.innerHTML = `
+                    <div class="task-header">
+                        <div class="checkbox"></div>
+                        <div class="task-content">
+                            <div class="task-number">Задача ${taskNumber}</div>
+                            <div class="task-title">${task.title}</div>
+                            <ul class="task-questions">
+                                ${questionsHTML}
+                            </ul>
+                            <div class="answer-section">
+                                <label class="answer-label">Ваш ответ:</label>
+                                <textarea 
+                                    class="answer-input" 
+                                    placeholder="Опишите ваши мысли и решения по этой задаче..."
+                                    data-task="${taskNumber}"
+                                    onclick="event.stopPropagation()"
+                                >${savedAnswer}</textarea>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                // Add event listener for saving answers
+                const textarea = taskCard.querySelector('.answer-input');
+                textarea.addEventListener('input', (e) => saveAnswer(taskNumber, e.target.value));
+                textarea.addEventListener('click', (e) => e.stopPropagation());
+
+                taskListElement.appendChild(taskCard);
+            });
+
+            updateProgress();
+        }
+
+        function toggleTask(taskNumber) {
+            if (completedTasksSet.has(taskNumber)) {
+                completedTasksSet.delete(taskNumber);
+            } else {
+                completedTasksSet.add(taskNumber);
+            }
+            
+            localStorage.setItem('completedTasks', JSON.stringify([...completedTasksSet]));
+            renderTasks();
+        }
+
+        function saveAnswer(taskNumber, answer) {
+            answersData[taskNumber] = answer;
+            localStorage.setItem('taskAnswers', JSON.stringify(answersData));
+        }
+
+        function exportToDocument() {
+            const date = new Date().toLocaleDateString('ru-RU');
+            
+            let mdContent = `# Проектирование Внешнего Хакатона
+
+**Дата экспорта:** ${date}  
+**Всего задач:** ${tasks.length}  
+**Выполнено:** ${completedTasksSet.size} из ${tasks.length}  
+**Прогресс:** ${Math.round((completedTasksSet.size / tasks.length) * 100)}%
+
+---
+
+`;
+
+            tasks.forEach((task, index) => {
+                const taskNumber = index + 1;
+                const isCompleted = completedTasksSet.has(taskNumber);
+                const answer = answersData[taskNumber] || '';
+                const statusEmoji = isCompleted ? '✅' : '⏳';
+
+                mdContent += `## ${statusEmoji} Задача ${taskNumber}: ${task.title}\n\n`;
+                mdContent += `**Статус:** ${isCompleted ? 'Выполнено' : 'В работе'}\n\n`;
+                
+                mdContent += `### Вопросы для проработки:\n\n`;
+                task.questions.forEach(q => {
+                    mdContent += `- ${q}\n`;
+                });
+                
+                mdContent += `\n### 💡 Ответ:\n\n`;
+                if (answer) {
+                    mdContent += `${answer}\n\n`;
+                } else {
+                    mdContent += `*Ответ еще не заполнен*\n\n`;
+                }
+                
+                mdContent += `---\n\n`;
+            });
+
+            mdContent += `\n---\n\n`;
+            mdContent += `*Документ сгенерирован автоматически из трекера задач хакатона*  \n`;
+            mdContent += `*© ${new Date().getFullYear()} Проектирование хакатона как продукта*\n`;
+
+            // Create and download the Markdown file
+            const blob = new Blob([mdContent], { type: 'text/markdown;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `Хакатон_Проектирование_${date.replace(/\./g, '-')}.md`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        function updateProgress() {
+            const total = tasks.length;
+            const completed = completedTasksSet.size;
+            const percent = Math.round((completed / total) * 100);
+
+            document.getElementById('totalTasks').textContent = total;
+            document.getElementById('completedTasks').textContent = completed;
+            document.getElementById('progressPercent').textContent = `${percent}%`;
+            document.getElementById('progressFill').style.width = `${percent}%`;
+        }
+
+        // Initial render
+        renderTasks();
+    </script>
+</body>
+</html>
